@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>明日方舟：終末地 - 洛西 (Rosi) 檔案庫</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for Radar Chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        endfield: {
+                            yellow: '#FFB800',
+                            orange: '#FF5500',
+                            cyan: '#00F0FF',
+                            dark: '#0A0C10',
+                            card: '#121620',
+                            border: '#1F293D',
+                            accent: '#2A344A'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['Consolas', 'Monaco', 'Courier New', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #0A0C10;
+            color: #E2E8F0;
+            overflow-x: hidden;
+        }
+
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+
+        /* Grid Background Effect */
+        .bg-tech-grid {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(31, 41, 61, 0.2) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(31, 41, 61, 0.2) 1px, transparent 1px);
+        }
+
+        /* Tech Cut Corner Effects */
+        .tech-corner {
+            clip-path: polygon(
+                0 0, 
+                calc(100% - 16px) 0, 
+                100% 16px, 
+                100% 100%, 
+                16px 100%, 
+                0 calc(100% - 16px)
+            );
+        }
+
+        .tech-corner-sm {
+            clip-path: polygon(
+                0 0, 
+                calc(100% - 8px) 0, 
+                100% 8px, 
+                100% 100%, 
+                8px 100%, 
+                0 calc(100% - 8px)
+            );
+        }
+
+        /* Glowing Text and Borders */
+        .glow-yellow { text-shadow: 0 0 10px rgba(255, 184, 0, 0.6); }
+        .glow-cyan { text-shadow: 0 0 10px rgba(0, 240, 255, 0.6); }
+        .box-glow-yellow { box-shadow: 0 0 15px rgba(255, 184, 0, 0.25); }
+        .box-glow-cyan { box-shadow: 0 0 15px rgba(0, 240, 255, 0.25); }
+
+        /* Scanning Line Animation */
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #FFB800, transparent);
+            position: absolute;
+            top: 0;
+            left: 0;
+            animation: scan 4s linear infinite;
+            opacity: 0.7;
+        }
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+
+        /* Audio Waveform Animation */
+        .wave-bar {
+            animation: pulse-wave 1.2s ease-in-out infinite alternate;
+        }
+        @keyframes pulse-wave {
+            0% { height: 15%; }
+            100% { height: 95%; }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0A0C10;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1F293D;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FFB800;
+        }
+    </style>
+</head>
+<body class="bg-tech-grid relative min-h-screen selection:bg-endfield-yellow selection:text-black">
+
+    <!-- Background Canvas for Interactive Particles -->
+    <canvas id="particleCanvas" class="fixed inset-0 pointer-events-none z-0 opacity-40"></canvas>
+
+    <!-- Global HUD Overlay Decor -->
+    <div class="fixed top-0 left-0 w-full h-full pointer-events-none z-50 border-[1px] border-endfield-border/30 m-0">
+        <div class="absolute top-2 left-4 text-[10px] font-mono text-endfield-yellow/50 tracking-widest hidden md:block">SYS.OS // ENDFIELD_TACTICAL_DB_v4.8</div>
+        <div class="absolute top-2 right-4 text-[10px] font-mono text-endfield-cyan/50 tracking-widest hidden md:block">LOC: TALOS-II // ENCRYPTED</div>
+        <div class="absolute bottom-2 left-4 text-[10px] font-mono text-gray-500 hidden md:block">STATUS: ONLINE [PROTOCOL_ACQUIRED]</div>
+    </div>
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-40 bg-endfield-dark/90 backdrop-blur-md border-b border-endfield-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-endfield-yellow flex items-center justify-center font-black text-black font-orbitron text-lg tech-corner-sm">
+                        EF
+                    </div>
+                    <div>
+                        <a href="#" class="font-orbitron font-extrabold text-lg text-white tracking-wider flex items-center gap-2">
+                            ENDFIELD <span class="text-xs px-1.5 py-0.5 bg-endfield-orange text-white rounded-xs uppercase">Rosi</span>
+                        </a>
+                        <div class="text-[9px] font-mono text-gray-400 tracking-widest uppercase">明日方舟：終末地</div>
+                    </div>
+                </div>
+
+                <!-- Desktop Nav Tabs -->
+                <nav class="hidden md:flex space-x-1 font-mono text-xs">
+                    <a href="#overview" class="px-3 py-2 text-endfield-yellow border-b-2 border-endfield-yellow font-semibold tracking-wider transition hover:text-endfield-yellow">01. 角色概覽</a>
+                    <a href="#stats" class="px-3 py-2 text-gray-400 hover:text-white transition tracking-wider">02. 數據檔案</a>
+                    <a href="#skills" class="px-3 py-2 text-gray-400 hover:text-white transition tracking-wider">03. 戰鬥技能</a>
+                    <a href="#lore" class="px-3 py-2 text-gray-400 hover:text-white transition tracking-wider">04. 機密故事</a>
+                    <a href="#voice" class="px-3 py-2 text-gray-400 hover:text-white transition tracking-wider">05. 語音日誌</a>
+                </nav>
+
+                <!-- Actions / Controls -->
+                <div class="flex items-center space-x-3">
+                    <button id="langToggle" class="px-2.5 py-1 text-xs font-mono bg-endfield-card border border-endfield-border hover:border-endfield-yellow text-gray-300 hover:text-endfield-yellow transition tech-corner-sm flex items-center gap-1.5">
+                        <i class="fa-solid fa-globe text-endfield-cyan"></i>
+                        <span>ZH / EN</span>
+                    </button>
+                    <!-- Mobile menu button -->
+                    <button id="mobileMenuBtn" class="md:hidden p-2 text-gray-400 hover:text-white focus:outline-none">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Menu -->
+        <div id="mobileMenu" class="hidden md:hidden bg-endfield-card border-b border-endfield-border px-4 pt-2 pb-4 space-y-2 font-mono text-sm">
+            <a href="#overview" class="block px-3 py-2 text-endfield-yellow bg-endfield-border/30 rounded">01. 角色概覽 OVERVIEW</a>
+            <a href="#stats" class="block px-3 py-2 text-gray-300 hover:bg-endfield-border/30 rounded">02. 數據檔案 STATS</a>
+            <a href="#skills" class="block px-3 py-2 text-gray-300 hover:bg-endfield-border/30 rounded">03. 戰鬥技能 SKILLS</a>
+            <a href="#lore" class="block px-3 py-2 text-gray-300 hover:bg-endfield-border/30 rounded">04. 機密故事 LORE</a>
+            <a href="#voice" class="block px-3 py-2 text-gray-300 hover:bg-endfield-border/30 rounded">05. 語音日誌 VOICE</a>
+        </div>
+    </header>
+
+    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20 pt-6 pb-20">
+
+        <!-- 1. HERO SECTION -->
+        <section id="overview" class="relative pt-6 min-h-[85vh] flex flex-col justify-center">
+            <!-- Background HUD Decorative Text -->
+            <div class="absolute top-10 left-0 text-7xl sm:text-9xl font-black font-orbitron text-endfield-border/20 select-none pointer-events-none -z-10">
+                ROSI // 09
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                
+                <!-- Hero Left Info -->
+                <div class="lg:col-span-6 space-y-6">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 bg-endfield-yellow/10 border border-endfield-yellow/40 text-endfield-yellow text-xs font-mono tracking-widest tech-corner-sm">
+                        <span class="w-2 h-2 rounded-full bg-endfield-yellow animate-ping"></span>
+                        PROTOCOL RECOVERY // SPECIAL OPS
+                    </div>
+
+                    <div class="space-y-2">
+                        <h2 class="text-sm font-mono text-endfield-cyan tracking-widest uppercase">終末地工業 Protocol Specialist</h2>
+                        <h1 class="text-5xl sm:text-7xl font-black font-orbitron tracking-tight text-white flex items-baseline gap-4">
+                            洛西 <span class="text-2xl sm:text-4xl text-endfield-yellow font-light">ROSI</span>
+                        </h1>
+                        <p class="text-xs font-mono text-gray-400">ID: END-OPERATOR-ROSI | AFFILIATION: ENDFIELD INDUSTRIES</p>
+                    </div>
+
+                    <p class="text-gray-300 text-sm sm:text-base leading-relaxed border-l-2 border-endfield-yellow pl-4 bg-endfield-card/40 py-2">
+                        「前線通訊已確認，這裡是洛西。不管前面是崩壞體還是極端氣候，交給我來開路吧。」
+                        <br><br>
+                        終末地工業高級協議回收專家。擅長高危廢土環境下的戰術挺進與精密機電設備回收，持有特殊高頻震盪戰術刃與終末地高壓電磁裝具。
+                    </p>
+
+                    <!-- Key Traits / Tags -->
+                    <div class="flex flex-wrap gap-2 text-xs font-mono">
+                        <span class="px-2.5 py-1 bg-endfield-card border border-endfield-border text-gray-300">主定位: 近接突擊 / 戰術破甲</span>
+                        <span class="px-2.5 py-1 bg-endfield-card border border-endfield-border text-gray-300">傷害類型: 雷電脈衝</span>
+                        <span class="px-2.5 py-1 bg-endfield-card border border-endfield-border text-endfield-cyan">危險等級: HIGH</span>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-wrap gap-4 pt-4">
+                        <a href="#skills" class="px-6 py-3 bg-endfield-yellow hover:bg-yellow-400 text-black font-orbitron font-bold text-sm tracking-wider transition tech-corner box-glow-yellow flex items-center gap-2">
+                            <i class="fa-solid fa-bolt"></i> 觀看技能演示
+                        </a>
+                        <a href="#lore" class="px-6 py-3 bg-endfield-card hover:bg-endfield-accent border border-endfield-border text-white font-orbitron font-medium text-sm tracking-wider transition tech-corner flex items-center gap-2">
+                            <i class="fa-solid fa-folder-open text-endfield-cyan"></i> 調閱檔案文件
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Hero Right: Dynamic Character Artwork Card -->
+                <div class="lg:col-span-6 relative flex justify-center">
+                    
+                    <!-- HUD Frame Canvas Container -->
+                    <div class="relative w-full max-w-md aspect-[3/4] bg-endfield-card/80 border border-endfield-border tech-corner p-3 group overflow-hidden box-glow-yellow">
+                        
+                        <!-- Scanning line effect inside portrait -->
+                        <div class="scanline"></div>
+
+                        <!-- Corner HUD Accents -->
+                        <div class="absolute top-2 left-2 text-[10px] font-mono text-endfield-yellow/80">SYS.TARGET_LOCK</div>
+                        <div class="absolute top-2 right-2 text-[10px] font-mono text-endfield-cyan">98.4%</div>
+                        <div class="absolute bottom-2 left-2 text-[10px] font-mono text-gray-500">POS: X-104 Y-882</div>
+                        <div class="absolute bottom-2 right-2 text-[10px] font-mono text-endfield-yellow">RANK: S</div>
+
+                        <!-- Character Graphic Placeholder / SVG Artwork Simulation -->
+                        <div class="w-full h-full bg-gradient-to-t from-endfield-dark via-endfield-card to-endfield-accent/40 relative flex items-center justify-center overflow-hidden">
+                            
+                            <!-- Tactical Radial Circle Backing -->
+                            <div class="absolute w-72 h-72 rounded-full border border-endfield-yellow/20 animate-spin" style="animation-duration: 20s;"></div>
+                            <div class="absolute w-56 h-56 rounded-full border border-dashed border-endfield-cyan/30 animate-spin" style="animation-duration: 12s; animation-direction: reverse;"></div>
+
+                            <!-- Vector Character Silhouette Visual -->
+                            <div class="relative z-10 text-center flex flex-col items-center justify-center p-6">
+                                <!-- Character Avatar Icon/SVG Visual -->
+                                <div class="w-40 h-40 mb-4 rounded-full border-2 border-endfield-yellow bg-endfield-dark/90 flex items-center justify-center relative shadow-2xl">
+                                    <i class="fa-solid fa-user-ninja text-7xl text-endfield-yellow transform group-hover:scale-110 transition duration-500"></i>
+                                    <div class="absolute -bottom-2 px-3 py-0.5 bg-endfield-orange text-black font-mono font-bold text-[10px] rounded">ROSI // 09</div>
+                                </div>
+                                <div class="font-orbitron font-extrabold text-2xl text-white tracking-widest mt-2">ROSI</div>
+                                <div class="text-xs font-mono text-endfield-cyan uppercase tracking-wider">Endfield Recovery Specialist</div>
+                                
+                                <!-- Decorative Interactive Toggle inside Art -->
+                                <div class="mt-6 flex gap-2">
+                                    <button class="px-2 py-1 bg-endfield-yellow/20 hover:bg-endfield-yellow hover:text-black border border-endfield-yellow text-endfield-yellow text-[10px] font-mono transition">
+                                        形態 A : 廢土行軍
+                                    </button>
+                                    <button class="px-2 py-1 bg-endfield-card hover:bg-endfield-cyan hover:text-black border border-endfield-border text-gray-400 text-[10px] font-mono transition">
+                                        形態 B : 超載作戰
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Outer Targeting Reticle overlay -->
+                        <div class="absolute inset-6 border border-endfield-cyan/20 pointer-events-none flex items-center justify-center">
+                            <div class="w-full h-[1px] bg-endfield-cyan/10"></div>
+                            <div class="h-full w-[1px] bg-endfield-cyan/10 absolute"></div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 2. CHARACTER OVERVIEW & RADAR STATS -->
+        <section id="stats" class="space-y-8 pt-10 border-t border-endfield-border/50">
+            
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <div class="text-xs font-mono text-endfield-yellow tracking-widest">02 // DATA MATRIX</div>
+                    <h2 class="text-3xl font-black font-orbitron text-white">基礎數據與戰術評估</h2>
+                </div>
+                <div class="text-xs font-mono text-gray-400">
+                    *數據來自終末地戰術數據中心（Talos-II Central DB）
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- Left: Basic Information Cards -->
+                <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    
+                    <div class="bg-endfield-card border border-endfield-border p-4 tech-corner-sm space-y-2">
+                        <div class="text-xs font-mono text-gray-400">OPERATOR CLASS / 職業</div>
+                        <div class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-shield-halved text-endfield-yellow"></i> 近衛 / 戰術破甲
+                        </div>
+                        <div class="text-xs text-gray-400">擅長正面突擊，對重裝目標具備高額破甲能力。</div>
+                    </div>
+
+                    <div class="bg-endfield-card border border-endfield-border p-4 tech-corner-sm space-y-2">
+                        <div class="text-xs font-mono text-gray-400">ELEMENTAL TYPE / 屬性</div>
+                        <div class="text-lg font-bold text-endfield-cyan flex items-center gap-2">
+                            <i class="fa-solid fa-bolt text-endfield-cyan"></i> 電磁脈衝 (Electromagnetic)
+                        </div>
+                        <div class="text-xs text-gray-400">技能附帶持續高壓感電，可干擾機械敵方單位。</div>
+                    </div>
+
+                    <div class="bg-endfield-card border border-endfield-border p-4 tech-corner-sm space-y-2">
+                        <div class="text-xs font-mono text-gray-400">WEAPON TYPE / 武器種類</div>
+                        <div class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-khanda text-endfield-orange"></i> 高頻震盪雙刃「閃雷」
+                        </div>
+                        <div class="text-xs text-gray-400">終末地工業特製，具備高轉化率的高壓電場刃身。</div>
+                    </div>
+
+                    <div class="bg-endfield-card border border-endfield-border p-4 tech-corner-sm space-y-2">
+                        <div class="text-xs font-mono text-gray-400">VOICE ACTOR / CV</div>
+                        <div class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-microphone text-endfield-yellow"></i> 種崎敦美 (日) / 穆雪婷 (中)
+                        </div>
+                        <div class="text-xs text-gray-400">聲優音色沉穩幹練，完美展現廢土專家的冷靜與果斷。</div>
+                    </div>
+
+                    <!-- Additional Detail Line -->
+                    <div class="sm:col-span-2 bg-endfield-card/50 border border-endfield-border/60 p-4 font-mono text-xs text-gray-300 flex justify-between items-center">
+                        <span>陣營: 終末地工業 (Endfield Industries)</span>
+                        <span>出身: 塔洛斯-II (Talos-II)</span>
+                        <span>狀態: 現役 (Active)</span>
+                    </div>
+
+                </div>
+
+                <!-- Right: Radar Chart Visualization -->
+                <div class="lg:col-span-5 bg-endfield-card border border-endfield-border p-6 tech-corner relative flex flex-col items-center justify-center">
+                    <div class="absolute top-3 left-3 text-xs font-mono text-endfield-yellow">COMBAT_EFFICIENCY_RADAR</div>
+                    <div class="w-full max-w-[320px] aspect-square pt-4">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 3. COMBAT & SKILLS SECTION -->
+        <section id="skills" class="space-y-8 pt-10 border-t border-endfield-border/50">
+            
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <div class="text-xs font-mono text-endfield-cyan tracking-widest">03 // COMBAT PROTOCOL</div>
+                    <h2 class="text-3xl font-black font-orbitron text-white">戰鬥技能與機制</h2>
+                </div>
+                <div class="text-xs font-mono text-gray-400">
+                    點擊下方技能按鈕以檢視詳細解析與數值預覽
+                </div>
+            </div>
+
+            <!-- Skill Navigation Tabs -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-xs">
+                
+                <button onclick="switchSkill('skill-passive')" id="tab-skill-passive" class="skill-tab active px-4 py-3 bg-endfield-yellow text-black font-bold border border-endfield-yellow tech-corner-sm text-left transition flex items-center justify-between">
+                    <div>
+                        <div class="text-[10px] opacity-75">TALENT / 天賦</div>
+                        <div class="text-sm font-orbitron">電磁超載</div>
+                    </div>
+                    <i class="fa-solid fa-atom text-base"></i>
+                </button>
+
+                <button onclick="switchSkill('skill-basic')" id="tab-skill-basic" class="skill-tab px-4 py-3 bg-endfield-card hover:bg-endfield-accent text-gray-300 border border-endfield-border tech-corner-sm text-left transition flex items-center justify-between">
+                    <div>
+                        <div class="text-[10px] text-gray-400">BASIC / 普通攻擊</div>
+                        <div class="text-sm font-orbitron">疾雷斬擊</div>
+                    </div>
+                    <i class="fa-solid fa-hand-fist text-base text-gray-400"></i>
+                </button>
+
+                <button onclick="switchSkill('skill-active')" id="tab-skill-active" class="skill-tab px-4 py-3 bg-endfield-card hover:bg-endfield-accent text-gray-300 border border-endfield-border tech-corner-sm text-left transition flex items-center justify-between">
+                    <div>
+                        <div class="text-[10px] text-gray-400">SKILL / 戰術技能</div>
+                        <div class="text-sm font-orbitron">高壓瞬閃</div>
+                    </div>
+                    <i class="fa-solid fa-bolt-lightning text-base text-endfield-cyan"></i>
+                </button>
+
+                <button onclick="switchSkill('skill-ultimate')" id="tab-skill-ultimate" class="skill-tab px-4 py-3 bg-endfield-card hover:bg-endfield-accent text-gray-300 border border-endfield-border tech-corner-sm text-left transition flex items-center justify-between">
+                    <div>
+                        <div class="text-[10px] text-gray-400">ULTIMATE / 終極技</div>
+                        <div class="text-sm font-orbitron">終末解算：雷霆風暴</div>
+                    </div>
+                    <i class="fa-solid fa-burst text-base text-endfield-orange"></i>
+                </button>
+
+            </div>
+
+            <!-- Skill Content Display Box -->
+            <div id="skillDisplay" class="bg-endfield-card border border-endfield-border p-6 sm:p-8 tech-corner grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                
+                <!-- Left: Skill Text Info -->
+                <div class="lg:col-span-7 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <span id="skillBadge" class="px-2.5 py-1 bg-endfield-yellow text-black font-mono font-bold text-xs uppercase">TALENT / 被動天賦</span>
+                        <h3 id="skillTitle" class="text-2xl font-bold font-orbitron text-white">電磁超載 (Overload Pulse)</h3>
+                    </div>
+
+                    <div id="skillMetrics" class="flex gap-6 font-mono text-xs text-gray-400 border-y border-endfield-border/60 py-2">
+                        <div>冷卻時間: <span id="skillCD" class="text-white font-bold">被動生效</span></div>
+                        <div>能量消耗: <span id="skillCost" class="text-white font-bold">0 SP</span></div>
+                        <div>攻擊屬性: <span id="skillType" class="text-endfield-cyan font-bold">電磁加成</span></div>
+                    </div>
+
+                    <p id="skillDesc" class="text-gray-300 leading-relaxed text-sm">
+                        洛西的每次普通攻擊與技能命中敵方時，會為目標施加一組「電磁印記」（最多疊加 4 層）。當印記疊滿時將引爆印記，造成相當於洛西攻擊力 280% 的範圍雷電傷害，並使目標陷入 2 秒的強烈麻痺狀態，降低其 30% 防禦力。
+                    </p>
+
+                    <div id="skillDetailNotice" class="p-3 bg-endfield-accent/40 border-l-2 border-endfield-yellow text-xs font-mono text-gray-300">
+                        *戰術建議：優先配合高頻率多段攻擊隊友，快速觸發「電磁超載」的破甲效益。
+                    </div>
+                </div>
+
+                <!-- Right: Skill Visual / Canvas Animation Box -->
+                <div class="lg:col-span-5">
+                    <div class="relative w-full aspect-video bg-endfield-dark border border-endfield-border tech-corner-sm flex flex-col items-center justify-center overflow-hidden p-4 group">
+                        
+                        <!-- Dynamic Visual Animation Element -->
+                        <div id="skillVisualBox" class="w-full h-full flex flex-col items-center justify-center relative">
+                            <div class="w-20 h-20 rounded-full border-2 border-endfield-yellow flex items-center justify-center animate-ping opacity-30 absolute"></div>
+                            <i id="skillIconLarge" class="fa-solid fa-atom text-6xl text-endfield-yellow mb-2 group-hover:scale-110 transition duration-300"></i>
+                            <div id="skillVisualLabel" class="font-mono text-xs text-endfield-yellow tracking-widest mt-2">[EFFECT: PASSIVE_PULSE]</div>
+                        </div>
+
+                        <div class="absolute bottom-2 right-2 text-[9px] font-mono text-gray-500">TACTICAL_PREVIEW_ANIMATION</div>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- 4. LORE & CLASSIFIED FILES SECTION -->
+        <section id="lore" class="space-y-8 pt-10 border-t border-endfield-border/50">
+            
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <div class="text-xs font-mono text-endfield-yellow tracking-widest">04 // CLASSIFIED ARCHIVES</div>
+                    <h2 class="text-3xl font-black font-orbitron text-white">機密檔案與背景故事</h2>
+                </div>
+                <div class="text-xs font-mono text-endfield-orange">
+                    SECURITY LEVEL: CLEARANCE_3
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- Lore Navigation List -->
+                <div class="lg:col-span-4 space-y-2 font-mono text-xs">
+                    <button onclick="openLore('lore-1')" id="btn-lore-1" class="lore-btn active w-full p-3 bg-endfield-card border-l-4 border-endfield-yellow text-white text-left font-semibold transition hover:bg-endfield-accent">
+                        [檔案 01] 廢土上的回收者
+                    </button>
+                    <button onclick="openLore('lore-2')" id="btn-lore-2" class="lore-btn w-full p-3 bg-endfield-card border-l-4 border-transparent text-gray-400 text-left font-semibold transition hover:bg-endfield-accent hover:text-white">
+                        [檔案 02] 終末地協議裝具
+                    </button>
+                    <button onclick="openLore('lore-3')" id="btn-lore-3" class="lore-btn w-full p-3 bg-endfield-card border-l-4 border-transparent text-gray-400 text-left font-semibold transition hover:bg-endfield-accent hover:text-white">
+                        [檔案 03] 語錄記錄：關於塔洛斯
+                    </button>
+                </div>
+
+                <!-- Lore Document Display Area -->
+                <div class="lg:col-span-8 bg-endfield-card border border-endfield-border p-6 sm:p-8 tech-corner relative min-h-[300px]">
+                    
+                    <div class="absolute top-3 right-3 text-[10px] font-mono text-gray-500">DOCUMENT ID: EF-ROSI-LOG-902</div>
+
+                    <!-- File Content 1 -->
+                    <div id="lore-1" class="lore-content space-y-4">
+                        <h3 class="text-xl font-bold font-orbitron text-endfield-yellow">檔案 01：廢土上的回收者</h3>
+                        <div class="text-xs font-mono text-gray-400">解密日期: 2026.04.12 // 記錄人: 管理員</div>
+                        <p class="text-gray-300 text-sm leading-relaxed font-mono whitespace-pre-line">
+                            在塔洛斯-II 龐大的未知區域中，「協議回收」是一項高風險的工作。
+                            舊時代留下的技術設施往往被侵蝕體或異化生物包圍，而洛西正是終末地工業中最值得信賴的協議專家之一。
+
+                            她並不高大，但每次行動都能以驚人的冷靜完成前線挺進與系統重啟。
+                            根據同組隊員的評語，洛西在戰鬥中幾乎從不流露多餘的情緒，但在回收完一項關鍵協議組件後，她總會輕輕撫摸設備殼體上的終末地徽標。
+                        </p>
+                    </div>
+
+                    <!-- File Content 2 (Hidden by default) -->
+                    <div id="lore-2" class="lore-content hidden space-y-4">
+                        <h3 class="text-xl font-bold font-orbitron text-endfield-cyan">檔案 02：終末地協議裝具「閃雷」</h3>
+                        <div class="text-xs font-mono text-gray-400">解密日期: 2026.05.01 // 記錄人: 裝具整備組</div>
+                        <p class="text-gray-300 text-sm leading-relaxed font-mono whitespace-pre-line">
+                            洛西所使用的雙刃戰術裝具，並非標準的冷兵器，而是直接連通終末地高壓電路核心的電磁兵器。
+
+                            刃身採用高密度複合合金鑄造，可在 0.05 秒內升溫並施加超過 50,000 伏特的脈衝電流。
+                            這套裝具對使用者的神經反應要求極高，洛西是極少數能完整承受其電磁反衝力的特別行動隊成員。
+                        </p>
+                    </div>
+
+                    <!-- File Content 3 (Hidden by default) -->
+                    <div id="lore-3" class="lore-content hidden space-y-4">
+                        <h3 class="text-xl font-bold font-orbitron text-endfield-orange">檔案 03：語錄記錄：關於塔洛斯</h3>
+                        <div class="text-xs font-mono text-gray-400">解密日期: 2026.06.18 // 語音採集號: AUDIO_044</div>
+                        <p class="text-gray-300 text-sm leading-relaxed font-mono whitespace-pre-line">
+                            「很多人問我，塔洛斯這片土地充滿了風暴與危險，為什麼還要一遍遍深入未開發區？」
+
+                            「答案很簡單。我們丟失的東西，必須由我們親手撿回來。這不僅是終末地工業的使命，也是我站在此處的原因。」
+                        </p>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 5. VOICE & AUDIO SHOWCASE SECTION -->
+        <section id="voice" class="space-y-8 pt-10 border-t border-endfield-border/50">
+            
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <div class="text-xs font-mono text-endfield-cyan tracking-widest">05 // VOICE TRANSMISSION</div>
+                    <h2 class="text-3xl font-black font-orbitron text-white">語音檔案與聲優採集</h2>
+                </div>
+                <div class="text-xs font-mono text-gray-400">
+                    點擊播放條播放語音語錄
+                </div>
+            </div>
+
+            <div class="bg-endfield-card border border-endfield-border p-6 sm:p-8 tech-corner grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                
+                <!-- Voice List -->
+                <div class="lg:col-span-7 space-y-3 font-mono text-xs">
+                    
+                    <div onclick="playVoice('「前線通訊已確認，這裡是洛西。隨時可以出發。」', 'Greeting / 問候')" class="voice-item cursor-pointer p-3 bg-endfield-dark border border-endfield-border hover:border-endfield-yellow text-gray-300 hover:text-white transition flex items-center justify-between tech-corner-sm">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-play text-endfield-yellow"></i>
+                            <span>VOICE_01: 初次見面 (Greeting)</span>
+                        </div>
+                        <span class="text-gray-500 text-[10px]">00:05</span>
+                    </div>
+
+                    <div onclick="playVoice('「這片區域的離子風暴很強，請緊跟我，別掉隊了。」', 'Field Action / 廢土行動')" class="voice-item cursor-pointer p-3 bg-endfield-dark border border-endfield-border hover:border-endfield-yellow text-gray-300 hover:text-white transition flex items-center justify-between tech-corner-sm">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-play text-endfield-yellow"></i>
+                            <span>VOICE_02: 探索戰術 (Field Exploration)</span>
+                        </div>
+                        <span class="text-gray-500 text-[10px]">00:07</span>
+                    </div>
+
+                    <div onclick="playVoice('「高壓過載，目標鎖定！電磁脈衝，釋放！」', 'Combat Ultimate / 技能釋放')" class="voice-item cursor-pointer p-3 bg-endfield-dark border border-endfield-border hover:border-endfield-yellow text-gray-300 hover:text-white transition flex items-center justify-between tech-corner-sm">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-play text-endfield-yellow"></i>
+                            <span>VOICE_03: 必殺技語音 (Ultimate Skill)</span>
+                        </div>
+                        <span class="text-gray-500 text-[10px]">00:06</span>
+                    </div>
+
+                    <div onclick="playVoice('「協議組件已順利回收，任務完成。準備返航。」', 'Mission Complete / 任務完成')" class="voice-item cursor-pointer p-3 bg-endfield-dark border border-endfield-border hover:border-endfield-yellow text-gray-300 hover:text-white transition flex items-center justify-between tech-corner-sm">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-play text-endfield-yellow"></i>
+                            <span>VOICE_04: 任務結束 (Mission Victory)</span>
+                        </div>
+                        <span class="text-gray-500 text-[10px]">00:06</span>
+                    </div>
+
+                </div>
+
+                <!-- Interactive Waveform & Player Box -->
+                <div class="lg:col-span-5 bg-endfield-dark border border-endfield-border p-6 tech-corner-sm flex flex-col items-center justify-center space-y-4 text-center">
+                    
+                    <div id="voiceTag" class="text-xs font-mono text-endfield-cyan uppercase">
+                        READY TO TRANSMIT
+                    </div>
+
+                    <!-- Audio Waveform Visualizer -->
+                    <div class="flex items-end justify-center gap-1.5 h-16 w-full px-4 my-2">
+                        <div class="wave-bar w-1.5 bg-endfield-yellow h-2"></div>
+                        <div class="wave-bar w-1.5 bg-endfield-yellow h-4" style="animation-delay: 0.1s;"></div>
+                        <div class="wave-bar w-1.5 bg-endfield-yellow h-8" style="animation-delay: 0.3s;"></div>
+                        <div class="wave-bar w-1.5 bg-endfield-cyan h-12" style="animation-delay: 0.2s;"></div>
+                        <div class="wave-bar w-1.5 bg-endfield-yellow h-6" style="animation-delay: 0.4s;"></div>
+                        <div class="wave-bar w-1.5 bg-endfield-yellow h-10" style="animation-delay: 0.15s;"></div>
+                        <div class="wave-bar w-1.5 bg-endfield-cyan h-3" style="animation-delay: 0.25s;"></div>
+                        <div class="wave-bar w-1.5 bg-endfield-yellow h-7" style="animation-delay: 0.35s;"></div>
+                    </div>
+
+                    <!-- Subtitle Box -->
+                    <p id="voiceSubtitles" class="text-sm font-mono text-white min-h-[48px] flex items-center justify-center px-2">
+                        點擊左側列表播放聲音樣本...
+                    </p>
+
+                    <div class="w-full bg-endfield-border h-1 rounded relative overflow-hidden">
+                        <div id="voiceProgress" class="bg-endfield-yellow h-full w-0 transition-all duration-300"></div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer Section -->
+    <footer class="bg-endfield-dark border-t border-endfield-border mt-20 py-8 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 text-center space-y-3 font-mono text-xs text-gray-500">
+            <div class="flex justify-center items-center gap-2 text-gray-400">
+                <span class="font-orbitron font-bold text-white">ARAKNIGHTS: ENDFIELD</span>
+                <span>//</span>
+                <span>明日方舟：終末地 角色概念檔案</span>
+            </div>
+            <p>© HYPERGRYPH / ENDFIELD INDUSTRIES. ALL RIGHTS RESERVED.</p>
+            <p class="text-[10px] text-gray-600">本頁面為粉絲製作概念體驗展示頁，視覺風格參考《明日方舟：終末地》世界觀設計。</p>
+        </div>
+    </footer>
+
+    <!-- Interactive Script Section -->
+    <script>
+        
+        // Mobile Menu Toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+        });
+
+        // Skill Switching Logic
+        const skillData = {
+            'skill-passive': {
+                title: '電磁超載 (Overload Pulse)',
+                badge: 'TALENT / 被動天賦',
+                cd: '被動生效',
+                cost: '0 SP',
+                type: '電磁加成',
+                desc: '洛西的每次普通攻擊與技能命中敵方時，會為目標施加一組「電磁印記」（最多疊加 4 層）。當印記疊滿時將引爆印記，造成相當於洛西攻擊力 280% 的範圍雷電傷害，並使目標陷入 2 秒的強烈麻痺狀態，降低其 30% 防禦力。',
+                icon: 'fa-atom',
+                color: 'text-endfield-yellow',
+                label: '[EFFECT: PASSIVE_PULSE]'
+            },
+            'skill-basic': {
+                title: '疾雷斬擊 (Swift Lightning Cut)',
+                badge: 'BASIC / 普通攻擊',
+                cd: '0.8s',
+                cost: '0 SP',
+                type: '物理/電磁混合',
+                desc: '使用高頻震盪雙刃進行連續 4 段的快速斬擊，造成物理傷害與少量雷電傷害。第 4 段斬擊會向前方釋放一道電磁波，命中目標時附帶 1 層「電磁印記」。',
+                icon: 'fa-hand-fist',
+                color: 'text-white',
+                label: '[EFFECT: MELEE_COMBO]'
+            },
+            'skill-active': {
+                title: '高壓瞬閃 (High-Voltage Flash)',
+                badge: 'SKILL / 戰術技能',
+                cd: '8.5s',
+                cost: '25 SP',
+                type: '電磁破甲',
+                desc: '洛西向前高速化為雷光突進，對沿途的所有敵方單位造成 350% 電磁傷害並直接施加 2 層「電磁印記」。若成功擊穿敵方韌性條，將立即刷新該技能冷卻時間。',
+                icon: 'fa-bolt-lightning',
+                color: 'text-endfield-cyan',
+                label: '[EFFECT: DASH_BREAK]'
+            },
+            'skill-ultimate': {
+                title: '終末解算：雷霆風暴 (Endfield Protocol: Thunderstorm)',
+                badge: 'ULTIMATE / 終極技',
+                cd: '35s',
+                cost: '100 SP',
+                type: '高額範圍雷爆',
+                desc: '解開高壓電磁裝具限制，洛西跳躍至半空中並向地面插下電磁極柱，引發大範圍雷霆風暴。對範圍內敵方造成 1200% 高額雷電傷害，並立即引爆場上所有單位的「電磁印記」。',
+                icon: 'fa-burst',
+                color: 'text-endfield-orange',
+                label: '[EFFECT: AREA_OVERLOAD]'
+            }
+        };
+
+        function switchSkill(skillKey) {
+            const data = skillData[skillKey];
+            if (!data) return;
+
+            // Update Tabs Styling
+            document.querySelectorAll('.skill-tab').forEach(tab => {
+                tab.classList.remove('bg-endfield-yellow', 'text-black', 'font-bold');
+                tab.classList.add('bg-endfield-card', 'text-gray-300');
+            });
+            const activeTab = document.getElementById(`tab-${skillKey}`);
+            activeTab.classList.remove('bg-endfield-card', 'text-gray-300');
+            activeTab.classList.add('bg-endfield-yellow', 'text-black', 'font-bold');
+
+            // Update Skill Content
+            document.getElementById('skillTitle').innerText = data.title;
+            document.getElementById('skillBadge').innerText = data.badge;
+            document.getElementById('skillCD').innerText = data.cd;
+            document.getElementById('skillCost').innerText = data.cost;
+            document.getElementById('skillType').innerText = data.type;
+            document.getElementById('skillDesc').innerText = data.desc;
+
+            // Update Skill Icon Visual
+            const iconEl = document.getElementById('skillIconLarge');
+            iconEl.className = `fa-solid ${data.icon} text-6xl ${data.color} mb-2 group-hover:scale-110 transition duration-300`;
+            document.getElementById('skillVisualLabel').innerText = data.label;
+        }
+
+        // Lore Switching Logic
+        function openLore(loreId) {
+            document.querySelectorAll('.lore-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(loreId).classList.remove('hidden');
+
+            document.querySelectorAll('.lore-btn').forEach(btn => {
+                btn.classList.remove('border-endfield-yellow', 'text-white');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
+            const activeBtn = document.getElementById(`btn-${loreId}`);
+            activeBtn.classList.remove('border-transparent', 'text-gray-400');
+            activeBtn.classList.add('border-endfield-yellow', 'text-white');
+        }
+
+        // Voice Simulation Player
+        let progressInterval;
+        function playVoice(subtitleText, tagText) {
+            document.getElementById('voiceSubtitles').innerText = `"${subtitleText}"`;
+            document.getElementById('voiceTag').innerText = `TRANSMITTING // ${tagText}`;
+
+            const progressBar = document.getElementById('voiceProgress');
+            progressBar.style.width = '0%';
+
+            clearInterval(progressInterval);
+            let progress = 0;
+            progressInterval = setInterval(() => {
+                progress += 5;
+                progressBar.style.width = `${progress}%`;
+                if (progress >= 100) {
+                    clearInterval(progressInterval);
+                }
+            }, 100);
+        }
+
+        // Initialize Chart.js Radar Chart
+        window.addEventListener('DOMContentLoaded', () => {
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['攻擊力', '防禦力', '機動性', '戰術支援', '協同作戰', '破甲能級'],
+                    datasets: [{
+                        label: '洛西 (Rosi) 能力數值',
+                        data: [92, 70, 88, 75, 80, 95],
+                        backgroundColor: 'rgba(255, 184, 0, 0.25)',
+                        borderColor: '#FFB800',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#00F0FF',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#FFB800'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(31, 41, 61, 0.8)' },
+                            grid: { color: 'rgba(31, 41, 61, 0.8)' },
+                            pointLabels: {
+                                color: '#E2E8F0',
+                                font: { family: 'Orbitron', size: 11 }
+                            },
+                            ticks: { display: false, max: 100 }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Interactive Background Particle Effect
+            const canvas = document.getElementById('particleCanvas');
+            const pCtx = canvas.getContext('2d');
+            let particles = [];
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            for (let i = 0; i < 40; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2 + 1,
+                    speedY: Math.random() * 0.8 + 0.2,
+                    opacity: Math.random() * 0.5 + 0.2
+                });
+            }
+
+            function animateParticles() {
+                pCtx.clearRect(0, 0, canvas.width, canvas.height);
+                pCtx.fillStyle = '#FFB800';
+
+                particles.forEach(p => {
+                    p.y -= p.speedY;
+                    if (p.y < 0) p.y = canvas.height;
+                    pCtx.globalAlpha = p.opacity;
+                    pCtx.fillRect(p.x, p.y, p.size, p.size);
+                });
+
+                requestAnimationFrame(animateParticles);
+            }
+            animateParticles();
+        });
+    </script>
+</body>
+</html>
